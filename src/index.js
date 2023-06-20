@@ -11,8 +11,18 @@ import {
   FlexItem,
   Button,
   Icon,
+  PanelBody,
+  PanelRow,
+  ColorPicker,
 } from '@wordpress/components';
 import './index.scss';
+import {
+  InspectorControls,
+  BlockControls,
+  AlignmentToolbar,
+  useBlockProps,
+} from '@wordpress/block-editor';
+import { ChromePicker } from 'react-color';
 
 //disable Update button in the CMS if there is any are-you-paying-attention block with the correctAnswer attribute set to undefined
 (() => {
@@ -47,6 +57,20 @@ wp.blocks.registerBlockType('ourplugin/are-you-paying-attention', {
     question: { type: 'string' },
     answers: { type: 'array', default: [''] },
     correctAnswer: { type: 'number', default: undefined },
+    bgColor: { type: 'string', default: '#ebebeb' },
+    theAlignment: { type: 'string', default: 'left' },
+  },
+  description:
+    'Give your audience the chance to prove their comprehension of your content.',
+  example: {
+    //populates the preview when clicking the + button in the CMS
+    attributes: {
+      question: 'What is the color of the sky?',
+      answers: ['red', 'blue', 'yellow'],
+      correctAnswer: 1,
+      bgColor: 'cfe8f1',
+      theAlignment: 'center',
+    },
   },
   edit: EditComponent, //what the admin sees in the admin's CMS
   save: function (props) {
@@ -55,6 +79,11 @@ wp.blocks.registerBlockType('ourplugin/are-you-paying-attention', {
 });
 
 function EditComponent(props) {
+  const blockProps = useBlockProps({
+    className: 'paying-attention-edit-block',
+    style: { backgroundColor: props.attributes.bgColor },
+  }); //when using block.json to point the js and css files, you need to use this hook to make sure that the block will be correcly selected once you click on it in the editor CMS; pass the props that are are already in this div as properties of the options parameter -> see also the first returned div in the component EditComponent
+
   function updateQuestion(value) {
     props.setAttributes({ question: value });
   }
@@ -75,7 +104,26 @@ function EditComponent(props) {
   }
 
   return (
-    <div className='paying-attention-edit-block'>
+    <div {...blockProps}>
+      {/* add text alignment control right on the nav of the block itself (the nav that pops up when we click the block): */}
+      <BlockControls>
+        <AlignmentToolbar
+          value={props.attributes.theAlignment}
+          onChange={(x) => props.setAttributes({ theAlignment: x })}
+        />
+      </BlockControls>
+      {/* add color picker for bgColor in the block tab (on the right in the CMS): */}
+      <InspectorControls>
+        <PanelBody title='Background Color' initialOpen={true}>
+          <PanelRow>
+            <ChromePicker
+              color={props.attributes.bgColor}
+              onChangeComplete={(x) => props.setAttributes({ bgColor: x.hex })}
+              disableAlpha={true}
+            />
+          </PanelRow>
+        </PanelBody>
+      </InspectorControls>
       <TextControl
         label='Question:'
         value={props.attributes.question}
